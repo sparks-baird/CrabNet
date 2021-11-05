@@ -17,6 +17,8 @@ from crabnet.utils.composition import (
     _element_composition,
 )
 
+# from crabnet.utils.nbr_feat import nbr_feat
+
 from sklearn.preprocessing import StandardScaler, Normalizer
 
 import json
@@ -405,8 +407,9 @@ class EDMDataset(Dataset):
         self.X = np.array(self.data[0])
         self.y = np.array(self.data[1])
         self.formula = np.array(self.data[2])
+        self.total_nbr_fea_master = np.array(self.data[3])
 
-        self.shape = [(self.X.shape), (self.y.shape), (self.formula.shape)]
+        self.shape = [(self.X.shape), (self.y.shape), (self.formula.shape), (self.total_nbr_fea_master.shape)]
 
     def __str__(self):
         string = f"EDMDataset with X.shape {self.X.shape}"
@@ -419,11 +422,12 @@ class EDMDataset(Dataset):
         X = self.X[idx, :, :]
         y = self.y[idx]
         formula = self.formula[idx]
-
+        total_nbr_fea_master = self.total_nbr_fea_master[idx, :, :, :]
         X = torch.as_tensor(X, dtype=data_type_torch)
         y = torch.as_tensor(y, dtype=data_type_torch)
+        total_nbr_fea_master = torch.as_tensor(total_nbr_fea_master, dtype=data_type_torch)
 
-        return (X, y, formula)
+        return (X, y, formula, total_nbr_fea_master)
 
 
 def get_edm(
@@ -492,8 +496,7 @@ def get_edm(
         n_elements = 16
 
     edm_array = np.zeros(
-        shape=(len(list_ohm), n_elements, len(all_symbols) + 1), dtype=data_type_np
-    )
+        shape=(len(list_ohm), n_elements, len(all_symbols) + 1), dtype=data_type_np)
     elem_num = np.zeros(shape=(len(list_ohm), n_elements), dtype=data_type_np)
     elem_frac = np.zeros(shape=(len(list_ohm), n_elements), dtype=data_type_np)
     for i, comp in enumerate(
@@ -522,8 +525,15 @@ def get_edm(
     elem_num = elem_num.reshape(elem_num.shape[0], elem_num.shape[1], 1)
     elem_frac = elem_frac.reshape(elem_frac.shape[0], elem_frac.shape[1], 1)
     out = np.concatenate((elem_num, elem_frac), axis=1)
+    
+    
+    
+    # total_nbr_fea_master = nbr_feat(df)
+    
+    total_nbr_fea_master = np.zeros((df.shape[0],12,12,225))
+    
 
-    return out, y, formula
+    return out, y, formula, total_nbr_fea_master
 
 
 # %%

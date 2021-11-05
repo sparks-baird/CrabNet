@@ -199,7 +199,7 @@ class CrabNet(nn.Module):
         self.out_hidden = [1024, 512, 256, 128]
         self.output_nn = ResidualNetwork(self.d_model, self.out_dims, self.out_hidden)
 
-    def forward(self, src, frac):
+    def forward(self, src, frac, total_nbr_fea_master):
         output = self.encoder(src, frac)
 
         # average the "element contribution" at the end

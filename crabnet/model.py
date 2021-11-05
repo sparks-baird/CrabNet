@@ -203,7 +203,7 @@ class Model:
         ti = time()
         minima = []
         for i, data in enumerate(self.train_loader):
-            X, y, formula = data
+            X, y, formula, total_nbr_fea_master = data
             y = self.scaler.scale(y)
             src, frac = X.squeeze(-1).chunk(2, dim=1)
             # add a small jitter to the input fractions to improve model
@@ -219,8 +219,9 @@ class Model:
                 self.compute_device, dtype=data_type_torch, non_blocking=True
             )
             y = y.to(self.compute_device, dtype=data_type_torch, non_blocking=True)
+            total_nbr_fea_master = total_nbr_fea_master.to(self.compute_device, dtype=data_type_torch, non_blocking=True)
 
-            output = self.model.forward(src, frac)
+            output = self.model.forward(src, frac, total_nbr_fea_master)
             prediction, uncertainty = output.chunk(2, dim=-1)
             loss = self.criterion(prediction.view(-1), uncertainty.view(-1), y.view(-1))
 
