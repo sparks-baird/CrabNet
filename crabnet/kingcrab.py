@@ -155,15 +155,15 @@ class Encoder(nn.Module):
         mask_unsqueeze = frac.unsqueeze(dim=-1)
         mask = torch.matmul(mask_unsqueeze, mask_unsqueeze.transpose(-2, -1))
         mask[mask != 0] = 1
-        src_mask = mask[:, 0] != 1 # src == 0
-        
+        src_mask = mask[:, 0] != 1  # src == 0
+
         pe = torch.zeros_like(x)
         ple = torch.zeros_like(x)
         pe_scaler = 2 ** (1 - self.pos_scaler) ** 2
         ple_scaler = 2 ** (1 - self.pos_scaler_log) ** 2
         pe[:, :, : self.d_model // 2] = self.pe(frac) * pe_scaler
         ple[:, :, self.d_model // 2 :] = self.ple(frac) * ple_scaler
-        
+
         if self.attention:
             x_src = x + pe + ple
             x_src = x_src.transpose(0, 1)
@@ -180,8 +180,8 @@ class Encoder(nn.Module):
         return x
 
 
-
 # %%
+
 
 class CgcnnEncoder(nn.Module):
     def __init__(self, d_model, N, heads, attn=True, compute_device=None):
@@ -192,9 +192,9 @@ class CgcnnEncoder(nn.Module):
         self.attention = attn
         self.compute_device = compute_device
 
-        self.emb_scaler = nn.parameter.Parameter(torch.tensor([1.0]))
-        self.pos_scaler = nn.parameter.Parameter(torch.tensor([1.0]))
-        self.pos_scaler_log = nn.parameter.Parameter(torch.tensor([1.0]))
+        # self.emb_scaler = nn.parameter.Parameter(torch.tensor([1.0]))
+        # self.pos_scaler = nn.parameter.Parameter(torch.tensor([1.0]))
+        # self.pos_scaler_log = nn.parameter.Parameter(torch.tensor([1.0]))
 
         if self.attention:
             encoder_layer = nn.TransformerEncoderLayer(
@@ -211,14 +211,14 @@ class CgcnnEncoder(nn.Module):
         # mask[mask != 0] = 1
         # src_mask = mask[:, 0] != 1 # src == 0
         struct_mask = struct == 0
-        
+
         # pe = torch.zeros_like(x)
         # ple = torch.zeros_like(x)
         # pe_scaler = 2 ** (1 - self.pos_scaler) ** 2
         # ple_scaler = 2 ** (1 - self.pos_scaler_log) ** 2
         # pe[:, :, : self.d_model // 2] = self.pe(frac) * pe_scaler
         # ple[:, :, self.d_model // 2 :] = self.ple(frac) * ple_scaler
-        
+
         if self.attention:
             # x_src = x + pe + ple
             # x_src = x_src.transpose(0, 1)
@@ -233,6 +233,7 @@ class CgcnnEncoder(nn.Module):
         #     x = x.masked_fill(hmask == 0, 0)
 
         return x
+
 
 # %%
 class CrabNet(nn.Module):
@@ -261,6 +262,8 @@ class CrabNet(nn.Module):
 
     def forward(self, src, frac, struct):
         output = self.encoder(src, frac)
+
+        # TODO: 3D attention or NN shape reduction or matrix averaging
         struct_output = self.cgcnnencoder(struct)
 
         # average the "element contribution" at the end
