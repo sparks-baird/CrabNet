@@ -201,6 +201,7 @@ class CrabNet(nn.Module):
 
     def forward(self, src, frac, total_nbr_fea_master):
         output = self.encoder(src, frac)
+        # TODO: StructuralEncoder
 
         # average the "element contribution" at the end
         # mask so you only average "elements"
