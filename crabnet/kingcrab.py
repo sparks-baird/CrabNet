@@ -150,13 +150,16 @@ class Encoder(nn.Module):
                 encoder_layer, num_layers=self.N
             )
 
-    def forward(self, src, frac):
+    def forward(self, src, frac, struct):
         x = self.embed(src) * 2 ** self.emb_scaler
-        mask = frac.unsqueeze(dim=-1)
-        mask = torch.matmul(mask, mask.transpose(-2, -1))
+        mask_unsqueeze = frac.unsqueeze(dim=-1)
+        mask = torch.matmul(mask_unsqueeze, mask_unsqueeze.transpose(-2, -1))
         mask[mask != 0] = 1
-        src_mask = mask[:, 0] != 1
-
+        src_mask = mask[:, 0] != 1 # src == 0
+        
+        x_struct = self.embed(struct) * 2 ** self.emb_scaler
+        struct_mask = struct == 0
+        
         pe = torch.zeros_like(x)
         ple = torch.zeros_like(x)
         pe_scaler = 2 ** (1 - self.pos_scaler) ** 2
@@ -169,6 +172,8 @@ class Encoder(nn.Module):
             x_src = x_src.transpose(0, 1)
             x = self.transformer_encoder(x_src, src_key_padding_mask=src_mask)
             x = x.transpose(0, 1)
+            
+            x_struct = self.transformer_encoder(x_struct, src_key_padding_mask=struct_mask)
 
         if self.fractional:
             x = x * frac.unsqueeze(2).repeat(1, 1, self.d_model)
