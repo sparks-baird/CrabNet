@@ -55,7 +55,9 @@ class ResidualNetwork(nn.Module):
 
 
 class Embedder(nn.Module):
-    def __init__(self, d_model, compute_device=None, elem_prop="mat2vec"):
+    def __init__(
+        self, d_model: int, compute_device: str = None, elem_prop: str = "mat2vec",
+    ):
         super().__init__()
         self.d_model = d_model
         self.compute_device = compute_device
@@ -77,7 +79,7 @@ class Embedder(nn.Module):
             self.compute_device, dtype=data_type_torch
         )
 
-    def forward(self, src):
+    def forward(self, src, extra_features=None):
         mat2vec_emb = self.cbfv(src)
         x_emb = self.fc_mat2vec(mat2vec_emb)
         return x_emb
@@ -132,6 +134,7 @@ class Encoder(nn.Module):
         d_model,
         N,
         heads,
+        extend_features=None,
         frac=False,
         attn=True,
         compute_device=None,
@@ -148,6 +151,7 @@ class Encoder(nn.Module):
         self.d_model = d_model
         self.N = N
         self.heads = heads
+        self.extend_features = extend_features
         self.fractional = frac
         self.attention = attn
         self.compute_device = compute_device
@@ -179,8 +183,8 @@ class Encoder(nn.Module):
                 encoder_layer, num_layers=self.N
             )
 
-    def forward(self, src, frac):
-        x = self.embed(src) * self.emb_scaler  # * 2 ** self.emb_scaler
+    def forward(self, src, frac, extra_features=None):
+        x = self.embed(src, extra_features) * self.emb_scaler  # * 2 ** self.emb_scaler
         mask = frac.unsqueeze(dim=-1)
         mask = torch.matmul(mask, mask.transpose(-2, -1))
         mask[mask != 0] = 1
@@ -209,6 +213,10 @@ class Encoder(nn.Module):
         if mask is not None:
             x = x.masked_fill(hmask == 0, 0)
 
+        if self.extend_features is not None:
+            X_extra = extra_features.repeat(1, 1, 4).permute([1, 2, 0])
+            x = torch.concat((x, X_extra), axis=2)
+
         return x
 
 
@@ -218,6 +226,8 @@ class CrabNet(nn.Module):
         self,
         out_dims=3,
         d_model=512,
+        extend_features=None,
+        d_extend=0,
         N=3,
         heads=4,
         compute_device=None,
@@ -236,6 +246,8 @@ class CrabNet(nn.Module):
         self.avg = True
         self.out_dims = out_dims
         self.d_model = d_model
+        self.extend_features = extend_features
+        self.d_extend = d_extend
         self.N = N
         self.heads = heads
         self.compute_device = compute_device
@@ -244,6 +256,7 @@ class CrabNet(nn.Module):
             d_model=self.d_model,
             N=self.N,
             heads=self.heads,
+            extend_features=extend_features,
             compute_device=self.compute_device,
             pe_resolution=pe_resolution,
             ple_resolution=ple_resolution,
@@ -256,11 +269,11 @@ class CrabNet(nn.Module):
         )
         self.out_hidden = out_hidden
         self.output_nn = ResidualNetwork(
-            self.d_model, self.out_dims, self.out_hidden, self.bias
+            self.d_model + self.d_extend, self.out_dims, self.out_hidden, self.bias,
         )
 
-    def forward(self, src, frac):
-        output = self.encoder(src, frac)
+    def forward(self, src, frac, extra_features=None):
+        output = self.encoder(src, frac, extra_features)
 
         # average the "element contribution" at the end
         # mask so you only average "elements"

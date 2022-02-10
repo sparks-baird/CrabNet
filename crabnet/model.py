@@ -79,8 +79,8 @@ def data(
     Parameters
     ----------
     module : Module
-        The module within mat_discover that contains e.g. "train.csv". For example,
-        from mat_discover.CrabNet.data.materials_data import elasticity
+        The module within CrabNet that contains e.g. "train.csv". For example,
+        `from CrabNet.data.materials_data import elasticity`
     fname : str, optional
         Filename of text file to open.
     dummy : bool, optional
@@ -148,6 +148,8 @@ class Model:
         fudge=0.02,
         out_dims=3,
         d_model=512,
+        extend_features=None,
+        d_extend=0,
         N=3,
         heads=4,
         elem_prop="mat2vec",
@@ -160,6 +162,7 @@ class Model:
                 compute_device=compute_device,
                 out_dims=out_dims,
                 d_model=d_model,
+                d_extend=d_extend,
                 N=N,
                 heads=heads,
             )
@@ -170,6 +173,7 @@ class Model:
         self.classification = False
         self.n_elements = n_elements
         self.compute_device = model.compute_device
+        self.extend_features = extend_features
         self.fudge = fudge  #  expected fractional tolerance (std. dev) ~= 2%
         self.verbose = verbose
         self.elem_prop = elem_prop
@@ -182,11 +186,12 @@ class Model:
             print(f"Running on compute device: {self.compute_device}")
             print(f"Model size: {count_parameters(self.model)} parameters\n")
 
-    def load_data(self, data, batch_size=2 ** 9, train=False):
+    def load_data(self, data, extra_features=None, batch_size=2 ** 9, train=False):
         self.batch_size = batch_size
         inference = not train
         data_loaders = EDM_CsvLoader(
             data=data,
+            extra_features=extra_features,
             batch_size=batch_size,
             n_elements=self.n_elements,
             inference=inference,
@@ -218,7 +223,7 @@ class Model:
         ti = time()
         minima = []
         for i, data in enumerate(self.train_loader):
-            X, y, formula = data
+            X, y, formula, extra_features = data
             y = self.scaler.scale(y)
             src, frac = X.squeeze(-1).chunk(2, dim=1)
             # add a small jitter to the input fractions to improve model
@@ -234,8 +239,10 @@ class Model:
                 self.compute_device, dtype=data_type_torch, non_blocking=True
             )
             y = y.to(self.compute_device, dtype=data_type_torch, non_blocking=True)
-
-            output = self.model.forward(src, frac)
+            extra_features = extra_features.to(
+                self.compute_device, dtype=data_type_torch, non_blocking=True
+            )
+            output = self.model.forward(src, frac, extra_features=extra_features)
             prediction, uncertainty = output.chunk(2, dim=-1)
             loss = self.criterion(prediction.view(-1), uncertainty.view(-1), y.view(-1))
 
@@ -498,7 +505,11 @@ class Model:
         if data is None and loader is None:
             raise SyntaxError("Specify either data *or* loader, not neither.")
         elif data is not None and loader is None:
-            self.load_data(data)
+            if self.extend_features is not None:
+                extra_features = data[self.extend_features]
+            else:
+                extra_features = None
+            self.load_data(data, extra_features=extra_features)
             loader = self.data_loader
         elif data is not None and loader is not None:
             raise SyntaxError("Specify either data *or* loader, not both.")
@@ -513,14 +524,17 @@ class Model:
         self.model.eval()
         with torch.no_grad():
             for i, data in enumerate(loader):
-                X, y, formula = data
+                X, y, formula, extra_features = data
                 src, frac = X.squeeze(-1).chunk(2, dim=1)
                 src = src.to(self.compute_device, dtype=torch.long, non_blocking=True)
                 frac = frac.to(
                     self.compute_device, dtype=data_type_torch, non_blocking=True
                 )
                 y = y.to(self.compute_device, dtype=data_type_torch, non_blocking=True)
-                output = self.model.forward(src, frac)
+                extra_features = extra_features.to(
+                    self.compute_device, dtype=data_type_torch, non_blocking=True
+                )
+                output = self.model.forward(src, frac, extra_features=extra_features)
                 prediction, uncertainty = output.chunk(2, dim=-1)
                 uncertainty = torch.exp(uncertainty) * self.scaler.std
                 prediction = self.scaler.unscale(prediction)
