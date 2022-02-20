@@ -418,7 +418,7 @@ class CrabNet(nn.Module):
                 dropout=self.dropout,
             ).to(self.compute_device)
 
-        # self.transfer_nn = TransferNetwork(512, 512)
+        self.transfer_nn = TransferNetwork(512, 512)
         self.output_nn = ResidualNetwork(
             self.d_model + self.d_extend, self.out_dims, self.out_hidden, self.bias,
         )
