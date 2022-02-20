@@ -501,8 +501,8 @@ class _CrabNet(nn.Module):
             Model output containing predicted value and undcertainty for that value
         """
         output = self.encoder(src, frac, extra_features)
-        # print('WE GOT THIS FAR')
-        # output = self.transfer_nn(output)
+        print('WE GOT THIS FAR')
+        output = self.transfer_nn(output)
         
         # average the "element contribution" at the end
         # mask so you only average "elements"
