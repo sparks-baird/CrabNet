@@ -231,13 +231,13 @@ def get_model(
     # if training freeze one layer
     # if transfering unfreeze the layer to tune
 
-    if extend_features is not None:
-        if not extend_transfer:
-            for param in model.layers.fc1.parameters():
-                param.requires_grad = False
-        else:
-            for param in model.layers.fc1.parameters():
-                param.requires_grad = True
+    # if extend_features is not None:
+    #     if not extend_transfer:
+    #         for param in model.layers.fc1.parameters():
+    #             param.requires_grad = False
+    #     else:
+    #         for param in model.layers.fc1.parameters():
+    #             param.requires_grad = True
 
     # Apply BCEWithLogitsLoss to model output if binary classification is True
     if classification:
