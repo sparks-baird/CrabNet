@@ -8,7 +8,7 @@ import torch
 
 from sklearn.metrics import roc_auc_score
 
-from crabnet.kingcrab import CrabNet
+from crabnet.kingcrab import SubCrab
 from crabnet.model import Model
 from crabnet.utils.get_compute_device import get_compute_device
 
@@ -41,7 +41,7 @@ all_symbols = ['None', 'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na
 def model(mat_prop, classification_list, simple=False):
     # Get the TorchedCrabNet architecture loaded
     model = Model(
-        CrabNet(compute_device=compute_device).to(compute_device),
+        SubCrab(compute_device=compute_device).to(compute_device),
         model_name=f"{mat_prop}",
     )
     if True:
@@ -155,7 +155,7 @@ def save_results(output, save_name):
 
 def save_test_results(mat_prop, classification_list):
     # Load up a saved network.
-    model = Model(CrabNet(compute_device=compute_device).to(compute_device))
+    model = Model(SubCrab(compute_device=compute_device).to(compute_device))
     model.load_network(f"{mat_prop}.pth")
     if mat_prop in classification_list:
         model.classification = True

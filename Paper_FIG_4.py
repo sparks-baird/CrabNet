@@ -2,7 +2,7 @@ import numpy as np
 
 import torch
 
-from crabnet.kingcrab import CrabNet
+from crabnet.kingcrab import SubCrab
 from crabnet.model import Model
 from crabnet.utils.get_compute_device import get_compute_device
 from crabnet.utils.composition import _element_composition
@@ -48,7 +48,7 @@ num = ""
 mat_prop = "aflow__Egap"
 
 # Get the TorchedCrabNet architecture loaded
-model = Model(CrabNet().to(compute_device), model_name=f"{mat_prop}")
+model = Model(SubCrab().to(compute_device), model_name=f"{mat_prop}")
 if True:
     model.load_network(f"{mat_prop}{num}.pth")
     model.model_name = f"{mat_prop}{num}"
