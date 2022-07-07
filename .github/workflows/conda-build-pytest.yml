@@ -52,9 +52,10 @@ jobs:
         conda config --append channels sgbaird
         conda config --set anaconda_upload no
         cd scratch
-        conda build .[test]
+        conda build .
         cd ..
         conda install --use-local crabnet
+        pip install matbench
     
     - name: Pytest
       run: |
