@@ -31,10 +31,10 @@ jobs:
             conda install git conda-build conda-verify anaconda-client pytest conda-forge::grayskull conda-forge::flit conda-forge::coveralls conda-forge::conda-souschef
             pip install -U pip
             
-        - name: Pytest
-          shell: bash -l {0}
-          run: |
-            coverage run --source=crabnet -m pytest # python -m pytest
+#         - name: Pytest
+#           shell: bash -l {0}
+#           run: |
+#             coverage run --source=crabnet -m pytest # python -m pytest
 
         - name: Build and publish
           shell: bash -l {0}
