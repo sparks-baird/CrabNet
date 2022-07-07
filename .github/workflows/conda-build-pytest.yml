@@ -52,7 +52,7 @@ jobs:
         conda config --append channels sgbaird
         conda config --set anaconda_upload no
         cd scratch
-        conda build .
+        conda build .[test]
         cd ..
         conda install --use-local crabnet
     
