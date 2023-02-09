@@ -245,14 +245,13 @@ class CrabNet(nn.Module):
         self.max_lr = max_lr
 
         # Apply BCEWithLogitsLoss to model output if binary classification is True
-        if classification:
-            self.classification = True
+        self.classification = classification
+        
 
         self.model_name = model_name
         self.mat_prop = mat_prop
         self.data_loader = None
         self.train_loader = None
-        self.classification = False
         self.n_elements = n_elements
 
         self.fudge = fudge  #  expected fractional tolerance (std. dev) ~= 2%
