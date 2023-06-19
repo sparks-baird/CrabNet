@@ -12,6 +12,8 @@ or
 
 `pip install crabnet`
 
+> NOTE: `crabnet` is [currently incompatible with `torch 2.*`](https://github.com/sparks-baird/CrabNet/issues/70). For now, `pip install "torch<2"`
+
 ## Basic Usage
 
 ### Data
