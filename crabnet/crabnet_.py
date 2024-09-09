@@ -1094,8 +1094,8 @@ class CrabNet(nn.Module):
         """
         if model_name is None:
             model_name = self.model_name
-            os.makedirs(join("models", "trained_models"), exist_ok=True)
-            path = join("models", "trained_models", f"{model_name}.pth")
+        os.makedirs(join("models", "trained_models"), exist_ok=True)
+        path = join("models", "trained_models", f"{model_name}.pth")
         if self.verbose:
             print(f"Saving network ({model_name}) to {path}")
 
