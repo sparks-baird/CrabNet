@@ -14,17 +14,42 @@ class CompositionError(Exception):
     pass
 
 
-def get_sym_dict(f, factor):
+def get_sym_dict(formula, factor=1):
+    """
+    Parameters
+    ----------
+        formula: str
+            A string formula, e.g. Fe2O3, already stripped of parentheses.
+        factor: float
+            A factor to multiply the amount of each element by.
+    Return
+    ----------
+        sym_dict: dict
+            A dictionary recording the composition of that formula.
+    Notes
+    ----------
+        Can now handle scientific notation for element amounts.
+    """
+    ### Define element symbols as a capital letters followed by lowercase letters
+    elements = re.findall(r"[A-Z][a-z]*", formula)
     sym_dict = collections.defaultdict(float)
-    for m in re.finditer(r"([A-Z][a-z]*)\s*([-*\.\d]*)", f):
-        el = m.group(1)
-        amt = 1
-        if m.group(2).strip() != "":
-            amt = float(m.group(2))
-        sym_dict[el] += amt * factor
-        f = f.replace(m.group(), "", 1)
-    if f.strip():
-        raise CompositionError(f"{f} is an invalid formula!")
+    ### Intervening text is assumed to represent the amount of the preceding element symbol
+    for i in range(len(elements)):
+        if i == len(elements)-1:
+            amount = formula.split(elements[i])[1]
+        else:
+            amount = formula.split(elements[i])[1].split(elements[i+1])[0]
+        ### If no explicit amount is present, assume 1
+        if amount == '':
+            sym_dict[elements[i]] += 1*factor
+        ### Otherwise convert the intervening text to float
+        else:
+            try:
+                sym_dict[elements[i]] += float(amount)*factor  
+            except ValueError as e:
+                raise CompositionError(f"'{formula}' is an invalid formula. {e}")
+        ### Remove parsed element from the string to accomodate repeat elements
+        formula = formula.replace(elements[i]+amount, '', 1)
     return sym_dict
 
 
